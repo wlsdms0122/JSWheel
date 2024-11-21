@@ -13,8 +13,8 @@ public protocol JSWheelControllerDelegate<Element>: AnyObject {
     
     /// Called when an item is selected in the wheel controller.
     func wheelController(_ wheelController: some JSWheelControllable, didSelect element: Element?)
-    /// Called when the wheel has finished scrolling.
-    func wheelControllerDidEndScroll(_ wheelController: some JSWheelControllable)
+    /// Called when the wheel finished selecting an item.
+    func wheelControllerDidEndSelecting(_ wheelController: some JSWheelControllable)
 }
 
 public protocol JSWheelControllable { }
@@ -135,19 +135,19 @@ public class JSWheelController<
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         guard let selection, !scrollView.isTracking else { return }
         
-        scrollToElement(selection, animated: true) { [weak self] in
-            guard let self else { return }
-            self.delegate?.wheelControllerDidEndScroll(self)
-        }
+        // Adjust scroll position to the center of the item.
+        scrollToElement(selection, animated: true)
+        // Send wheel item selecting ended event.
+        delegate?.wheelControllerDidEndSelecting(self)
     }
     
     public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         guard let selection, !decelerate else { return }
         
-        scrollToElement(selection, animated: true) { [weak self] in
-            guard let self else { return }
-            self.delegate?.wheelControllerDidEndScroll(self)
-        }
+        // Adjust scroll position to the center of the item.
+        scrollToElement(selection, animated: true)
+        // Send wheel item selecting ended event.
+        delegate?.wheelControllerDidEndSelecting(self)
     }
     
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -181,7 +181,7 @@ public class JSWheelController<
         guard let selection else { return }
         
         // Scroll to selected item.
-        scrollToElement(selection, animated: animated, completion: nil)
+        scrollToElement(selection, animated: animated)
     }
     
     // MARK: - Private
@@ -216,10 +216,7 @@ public class JSWheelController<
         }
         
         let snapshot = makeDataSourceSnapshot(data: data)
-        dataSource.apply(snapshot) { [weak self] in
-            guard let selection = self?.selection else { return }
-            self?.scrollToElement(selection, animated: false, completion: nil)
-        }
+        dataSource.apply(snapshot)
         
         self.dataSource = dataSource
         
@@ -282,18 +279,10 @@ public class JSWheelController<
     }
     
     private func updateLayout(_ layout: UICollectionViewLayout, animated: Bool) {
-        CATransaction.setCompletionBlock { [weak self, selection] in
-            guard let selection else { return }
-            
-            self?.scrollToElement(selection, animated: animated) {
-                guard let self else { return }
-                self.delegate?.wheelControllerDidEndScroll(self)
-            }
+        collectionView.setCollectionViewLayout(layout, animated: animated) { [weak self] _ in
+            guard let selection = self?.selection else { return }
+            self?.scrollToElement(selection, animated: animated)
         }
-        
-        CATransaction.begin()
-        collectionView.setCollectionViewLayout(layout, animated: animated)
-        CATransaction.commit()
     }
     
     private func centerIndexPath() -> IndexPath? {
@@ -301,18 +290,13 @@ public class JSWheelController<
         return collectionView.indexPathForItem(at: center)
     }
     
-    private func scrollToElement(_ element: Data.Element, animated: Bool, completion: (() -> Void)?) {
+    private func scrollToElement(_ element: Data.Element, animated: Bool) {
         guard let indexPath = dataSource?.indexPath(for: element[keyPath: id]) else { return }
-        scrollToIndexPath(indexPath, animated: animated, completion: completion)
+        scrollToIndexPath(indexPath, animated: animated)
     }
     
-    private func scrollToIndexPath(_ indexPath: IndexPath, animated: Bool, completion: (() -> Void)?) {
-        CATransaction.begin()
-        CATransaction.setCompletionBlock {
-            completion?()
-        }
+    private func scrollToIndexPath(_ indexPath: IndexPath, animated: Bool) {
         collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: animated)
-        CATransaction.commit()
     }
 }
 
