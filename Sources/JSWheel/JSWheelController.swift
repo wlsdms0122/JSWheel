@@ -107,6 +107,7 @@ public class JSWheelController<
             let view = UICollectionView(frame: .zero, collectionViewLayout: layout)
             view.backgroundColor = .clear
             view.showsVerticalScrollIndicator = false
+            view.scrollsToTop = false
             
             return view
         }()
