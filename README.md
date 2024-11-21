@@ -63,6 +63,8 @@ public struct JSWheelOption {
     public var itemHeight: CGFloat = 32
     /// The spacing between items in the wheel.
     public var spacing: CGFloat = 0
+    /// A closure that gets called when the scrolling ends.
+    public var onSelectingEnd: (() -> Void)?
 }
 ```
 

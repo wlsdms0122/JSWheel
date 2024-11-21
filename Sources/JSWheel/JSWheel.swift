@@ -16,7 +16,7 @@ public struct JSWheelOption {
     /// The spacing between items in the wheel.
     public var spacing: CGFloat = 0
     /// A closure that gets called when the scrolling ends.
-    public var onScrollEnd: (() -> Void)?
+    public var onSelectingEnd: (() -> Void)?
 }
 
 public struct JSWheel<
@@ -29,7 +29,7 @@ public struct JSWheel<
         @Binding
         private var selection: Data.Element?
         
-        var onScrollEnd: (() -> Void)?
+        var onSelectingEnd: (() -> Void)?
         
         // MARK: - Initializer
         init(selection: Binding<Data.Element?>) {
@@ -38,13 +38,15 @@ public struct JSWheel<
         
         // MARK: - Lifecycle
         public func wheelController(_ wheelController: some JSWheelControllable, didSelect item: Data.Element?) {
-            Task {
+            Task { @MainActor in
                 selection = item
             }
         }
         
-        public func wheelControllerDidEndScroll(_ wheelController: some JSWheelControllable) {
-            onScrollEnd?()
+        public func wheelControllerDidEndSelecting(_ wheelController: some JSWheelControllable) {
+            Task { @MainActor in
+                onSelectingEnd?()
+            }
         }
         
         // MARK: - Public
@@ -92,6 +94,10 @@ public struct JSWheel<
             id: id,
             content: content
         )
+        controller.loadViewIfNeeded()
+        
+        controller.itemHeight = option.itemHeight
+        controller.spacing = option.spacing
         
         controller.delegate = context.coordinator
         
@@ -105,10 +111,13 @@ public struct JSWheel<
         
         uiViewController.updateData(data)
         
-        context.coordinator.onScrollEnd = option.onScrollEnd
+        context.coordinator.onSelectingEnd = option.onSelectingEnd
         
         if selection?[keyPath: id] != uiViewController.selection?[keyPath: id] {
             uiViewController.setSelection(selection, animated: true)
+            Task {
+                selection = uiViewController.selection
+            }
         }
     }
     
