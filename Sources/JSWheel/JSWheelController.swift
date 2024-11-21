@@ -28,7 +28,7 @@ public class JSWheelController<
     private var collectionView: UICollectionView!
     
     // MARK: - Property
-    private var cache: [ID: Data.Element] = [:]
+    /// Current selected item in the wheel.
     public private(set) var selection: Data.Element? {
         didSet {
             guard oldValue?[keyPath: id] != selection?[keyPath: id] else { return }
@@ -41,7 +41,7 @@ public class JSWheelController<
             }
         }
     }
-    
+    /// Each item height in the wheel.
     public var itemHeight: CGFloat = 32 {
         didSet {
             guard oldValue != itemHeight else { return }
@@ -54,6 +54,7 @@ public class JSWheelController<
             setCollectionViewContentInsets(itemHeight: itemHeight)
         }
     }
+    /// Spacing between items in the wheel.
     public var spacing: CGFloat = 0 {
         didSet {
             guard oldValue != spacing else { return }
@@ -73,7 +74,10 @@ public class JSWheelController<
         }
     }
     
+    /// Data cache dictionary for item lookup.
+    private var cache: [ID: Data.Element] = [:]
     private var dataSource: UICollectionViewDiffableDataSource<Int, ID>?
+    
     public weak var delegate: (any JSWheelControllerDelegate<Data.Element>)?
     
     /// Pending scroll element to scroll when the view's bounds determined.
@@ -162,9 +166,9 @@ public class JSWheelController<
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard collectionView.isTracking || collectionView.isDecelerating else { return }
         
+        // Set selection to the center item when the user scrolls the wheel.
         guard let indexPath = centerIndexPath(), let id = dataSource?.itemIdentifier(for: indexPath) else { return }
-        
-        selection = cache[id]
+        self.selection = cache[id]
     }
     
     // MARK: - Public
@@ -176,8 +180,7 @@ public class JSWheelController<
         ) { _, rhs in rhs }
         
         // Set selection through new data set. If the existing selection is not in the new data set, it will be set to `nil`.
-        self.selection = selection.map { element in element[keyPath: id] }
-            .flatMap { id in cache[id] }
+        self.selection = selection.flatMap { element in cache[element[keyPath: id]] }
         
         // Reload data source.
         let snapshot = makeDataSourceSnapshot(data: data)
