@@ -76,6 +76,9 @@ public class JSWheelController<
     private var dataSource: UICollectionViewDiffableDataSource<Int, ID>?
     public weak var delegate: (any JSWheelControllerDelegate<Data.Element>)?
     
+    /// Pending scroll element to scroll when the view's bounds determined.
+    private var pendingScrollElement: Data.Element?
+    
     // MARK: - Initializer
     init(
         initial selection: Data.Element? = nil,
@@ -84,6 +87,7 @@ public class JSWheelController<
         content: @escaping (Data.Element) -> Content
     ) {
         self.selection = selection
+        self.pendingScrollElement = selection
         self.data = data
         self.id = id
         self.content = content
@@ -130,6 +134,11 @@ public class JSWheelController<
         
         // Update collection view's content inset when collection view's bounds changed.
         setCollectionViewContentInsets(itemHeight: itemHeight)
+        
+        guard let pendingScrollElement else { return }
+        self.pendingScrollElement = nil
+        
+        scrollToElement(pendingScrollElement, animated: false)
     }
 
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {

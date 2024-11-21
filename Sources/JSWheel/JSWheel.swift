@@ -94,6 +94,10 @@ public struct JSWheel<
             id: id,
             content: content
         )
+        controller.loadViewIfNeeded()
+        
+        controller.itemHeight = option.itemHeight
+        controller.spacing = option.spacing
         
         controller.delegate = context.coordinator
         
