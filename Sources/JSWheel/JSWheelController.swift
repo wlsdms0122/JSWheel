@@ -176,9 +176,12 @@ public class JSWheelController<
     }
     
     public func setSelection(_ selection: Data.Element?, animated: Bool) {
-        self.selection = selection
+        guard let selection, cache[selection[keyPath: id]] != nil else {
+            self.selection = nil
+            return
+        }
         
-        guard let selection else { return }
+        self.selection = selection
         
         // Scroll to selected item.
         scrollToElement(selection, animated: animated)

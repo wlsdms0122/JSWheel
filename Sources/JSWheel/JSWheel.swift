@@ -38,7 +38,7 @@ public struct JSWheel<
         
         // MARK: - Lifecycle
         public func wheelController(_ wheelController: some JSWheelControllable, didSelect item: Data.Element?) {
-            Task {
+            Task { @MainActor in
                 selection = item
             }
         }
@@ -111,6 +111,9 @@ public struct JSWheel<
         
         if selection?[keyPath: id] != uiViewController.selection?[keyPath: id] {
             uiViewController.setSelection(selection, animated: true)
+            Task {
+                selection = uiViewController.selection
+            }
         }
     }
     
